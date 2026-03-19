@@ -1,24 +1,9 @@
 // ======================================================
 // ЗАДАНИЕ 6 — Вычисление арифметического выражения
 //
-// Выражение представлено как дерево:
-//
-//      +
-//     / \
-//    10  20
-//
-// или более сложное:
-//
-//        +
-//       / \
-//      +   *
-//     / \  / \
-//    10  9  -  5
-//           / \
-//          3   4
+// Выражение представлено как дерево.
 //
 // Нам нужно рекурсивно вычислить значение.
-//
 // ======================================================
 
 /// Операция над выражениями
@@ -45,45 +30,49 @@ enum Expression {
 }
 
 /// Рекурсивное вычисление выражения.
-///
-/// Алгоритм:
-/// 1. Если это Value — просто вернуть число.
-/// 2. Если это Op:
-///    - рекурсивно вычислить левое поддерево
-///    - рекурсивно вычислить правое поддерево
-///    - применить операцию
 fn eval(expr: &Expression) -> i64 {
     match expr {
-        // БАЗА РЕКУРСИИ
         Expression::Value(v) => *v,
-
-        // РЕКУРСИВНЫЙ СЛУЧАЙ
         Expression::Op { op, left, right } => {
-            // Сначала вычисляем левую и правую часть
             let l = eval(left);
             let r = eval(right);
 
-            // Затем применяем операцию
             match op {
                 Operation::Add => l + r,
                 Operation::Sub => l - r,
                 Operation::Mul => l * r,
-                Operation::Div => l / r, // деление целочисленное
+                Operation::Div => l / r,
             }
         }
     }
 }
 
-// ------------------------------------------------------
-// Тесты
-// ------------------------------------------------------
+/// Превращает дерево Expression в строку.
+fn expr_to_string(expr: &Expression) -> String {
+    match expr {
+        Expression::Value(v) => v.to_string(),
+        Expression::Op { op, left, right } => {
+            let l = expr_to_string(left);
+            let r = expr_to_string(right);
+
+            let op_str = match op {
+                Operation::Add => "+",
+                Operation::Sub => "-",
+                Operation::Mul => "*",
+                Operation::Div => "/",
+            };
+
+            format!("({} {} {})", l, op_str, r)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_simple_add() {
-        // 10 + 20
         let expr = Expression::Op {
             op: Operation::Add,
             left: Box::new(Expression::Value(10)),
@@ -95,70 +84,40 @@ mod tests {
 
     #[test]
     fn test_complex_expression() {
-        // (10 + 9) + ((3 - 4) * 5)
-        //
-        // Ручной расчёт:
-        // 10 + 9 = 19
-        // 3 - 4 = -1
-        // -1 * 5 = -5
-        // 19 + (-5) = 14
-
-        let expr =
-            Expression::Op {
+        let expr = Expression::Op {
+            op: Operation::Add,
+            left: Box::new(Expression::Op {
                 op: Operation::Add,
-                left: Box::new(
-                    Expression::Op {
-                        op: Operation::Add,
-                        left: Box::new(Expression::Value(10)),
-                        right: Box::new(Expression::Value(9)),
-                    }
-                ),
-                right: Box::new(
-                    Expression::Op {
-                        op: Operation::Mul,
-                        left: Box::new(
-                            Expression::Op {
-                                op: Operation::Sub,
-                                left: Box::new(Expression::Value(3)),
-                                right: Box::new(Expression::Value(4)),
-                            }
-                        ),
-                        right: Box::new(Expression::Value(5)),
-                    }
-                ),
-            };
+                left: Box::new(Expression::Value(10)),
+                right: Box::new(Expression::Value(9)),
+            }),
+            right: Box::new(Expression::Op {
+                op: Operation::Mul,
+                left: Box::new(Expression::Op {
+                    op: Operation::Sub,
+                    left: Box::new(Expression::Value(3)),
+                    right: Box::new(Expression::Value(4)),
+                }),
+                right: Box::new(Expression::Value(5)),
+            }),
+        };
 
         assert_eq!(eval(&expr), 14);
     }
-}
 
-/// Превращает дерево Expression в строку (инфиксная запись с скобками),
-/// чтобы в выводе было "по-человечески": (10 + 9) + ((3 - 4) * 5)
-fn expr_to_string(expr: &Expression) -> String {
-    match expr {
-        Expression::Value(v) => v.to_string(),
+    #[test]
+    fn test_division() {
+        let expr = Expression::Op {
+            op: Operation::Div,
+            left: Box::new(Expression::Value(20)),
+            right: Box::new(Expression::Value(5)),
+        };
 
-        Expression::Op { op, left, right } => {
-            // Рекурсивно печатаем левую и правую части
-            let l = expr_to_string(left);
-            let r = expr_to_string(right);
-
-            // Символ операции
-            let op_str = match op {
-                Operation::Add => "+",
-                Operation::Sub => "-",
-                Operation::Mul => "*",
-                Operation::Div => "/",
-            };
-
-            // Скобки специально ставим всегда, чтобы было однозначно
-            format!("({} {} {})", l, op_str, r)
-        }
+        assert_eq!(eval(&expr), 4);
     }
 }
 
 fn main() {
-    // (10 + 9) + ((3 - 4) * 5)
     let expr = Expression::Op {
         op: Operation::Add,
         left: Box::new(Expression::Op {
@@ -177,9 +136,15 @@ fn main() {
         }),
     };
 
-    let before = expr_to_string(&expr);
-    let after = eval(&expr);
+    let div_expr = Expression::Op {
+        op: Operation::Div,
+        left: Box::new(Expression::Value(20)),
+        right: Box::new(Expression::Value(5)),
+    };
 
-    println!("Было:  {}", before);
-    println!("Стало: {}", after);
+    println!("Было:  {}", expr_to_string(&expr));
+    println!("Стало: {}", eval(&expr));
+
+    println!("Было:  {}", expr_to_string(&div_expr));
+    println!("Стало: {}", eval(&div_expr));
 }

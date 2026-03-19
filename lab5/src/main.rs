@@ -41,52 +41,73 @@ enum Direction {
 }
 
 /// Кабина приехала на заданный этаж.
-///
-/// Возвращаем событие `Event::CarArrived(floor)`.
 fn car_arrived(floor: i32) -> Event {
     Event::CarArrived(floor)
 }
 
 /// Двери кабины открыты.
-///
-/// Возвращаем событие `Event::CarDoorOpened`.
 fn car_door_opened() -> Event {
     Event::CarDoorOpened
 }
 
 /// Двери кабины закрыты.
-///
-/// Возвращаем событие `Event::CarDoorClosed`.
 fn car_door_closed() -> Event {
     Event::CarDoorClosed
 }
 
 /// Кнопка вызова лифта нажата на заданном этаже.
-///
-/// Мы используем "структурный" вариант enum-а:
-/// Event::LobbyCallButtonPressed { floor: ..., dir: ... }
 fn lobby_call_button_pressed(floor: i32, dir: Direction) -> Event {
     Event::LobbyCallButtonPressed { floor, dir }
 }
 
 /// Кнопка этажа нажата в кабине лифта.
-///
-/// Возвращаем событие `Event::CarFloorButtonPressed(floor)`.
 fn car_floor_button_pressed(floor: i32) -> Event {
     Event::CarFloorButtonPressed(floor)
 }
 
+/// Превращает событие в понятное текстовое описание.
+///
+/// Здесь мы явно читаем поля enum-вариантов, поэтому
+/// warning'и о "field is never read" исчезнут.
+fn describe_event(event: &Event) -> String {
+    match event {
+        Event::CarArrived(floor) => {
+            format!("Лифт прибыл на этаж {}", floor)
+        }
+        Event::CarDoorOpened => {
+            "Двери лифта открылись".to_string()
+        }
+        Event::CarDoorClosed => {
+            "Двери лифта закрылись".to_string()
+        }
+        Event::LobbyCallButtonPressed { floor, dir } => {
+            let direction = match dir {
+                Direction::Up => "вверх",
+                Direction::Down => "вниз",
+            };
+            format!(
+                "На этаже {} нажали кнопку вызова лифта в направлении {}",
+                floor, direction
+            )
+        }
+        Event::CarFloorButtonPressed(floor) => {
+            format!("В кабине нажали кнопку этажа {}", floor)
+        }
+    }
+}
+
 fn main() {
-    println!(
-        "Пассажир на первом этаже нажал кнопку вызова: {:?}",
-        lobby_call_button_pressed(0, Direction::Up)
-    );
-    println!("Лифт приехал на первый этаж: {:?}", car_arrived(0));
-    println!("Дверь лифта открылась: {:?}", car_door_opened());
-    println!(
-        "Пассажир нажал кнопку третьего этажа: {:?}",
-        car_floor_button_pressed(3)
-    );
-    println!("Двери лифта закрылись: {:?}", car_door_closed());
-    println!("Лифт прибыл на третий этаж: {:?}", car_arrived(3));
+    let events = [
+        lobby_call_button_pressed(0, Direction::Up),
+        car_arrived(0),
+        car_door_opened(),
+        car_floor_button_pressed(3),
+        car_door_closed(),
+        car_arrived(3),
+        lobby_call_button_pressed(5, Direction::Down),
+    ];
+
+    for event in &events {
+        println!("{}", describe_event(event));
+    }
 }
