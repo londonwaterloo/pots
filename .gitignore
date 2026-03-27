@@ -1,0 +1,15 @@
+# Cargo build
+/target/
+
+# Cargo lock (если это не библиотека)
+Cargo.lock
+
+# MacOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

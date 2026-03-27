@@ -107,7 +107,7 @@ mod tests {
         assert_eq!(tree.len(), 1);
         tree.insert(1);
         assert_eq!(tree.len(), 2);
-        tree.insert(2); // not a unique item
+        tree.insert(2); 
         assert_eq!(tree.len(), 2);
     }
 
@@ -143,6 +143,37 @@ mod tests {
     }
 }
 
+
+fn print_tree<T: std::fmt::Display + Ord>(tree: &BinaryTree<T>) {
+    fn print_subtree<T: std::fmt::Display + Ord>(
+        subtree: &Subtree<T>,
+        prefix: String,
+        is_left: bool,
+    ) {
+        if let Some(node) = &subtree.0 {
+            println!(
+                "{}{}{}",
+                prefix,
+                if is_left { "├── " } else { "└── " },
+                node.value
+            );
+
+            let new_prefix = format!("{}{}", prefix, if is_left { "│   " } else { "    " });
+
+            print_subtree(&node.left, new_prefix.clone(), true);
+            print_subtree(&node.right, new_prefix, false);
+        }
+    }
+
+    if let Some(node) = &tree.root.0 {
+        println!("{}", node.value);
+        print_subtree(&node.left, String::new(), true);
+        print_subtree(&node.right, String::new(), false);
+    } else {
+        println!("(пустое дерево)");
+    }
+}
+
 fn main() {
     let mut tree = BinaryTree::new();
 
@@ -151,7 +182,9 @@ fn main() {
     tree.insert(3);
     tree.insert(2); // повторно не добавится
 
-    println!("Дерево: {:?}", tree);
+    //println!("Дерево: {:?}", tree);
+    println!("Дерево:");
+    print_tree(&tree);
     println!("Количество элементов: {}", tree.len());
     println!("Есть ли 1? {}", tree.has(&1));
     println!("Есть ли 4? {}", tree.has(&4));
