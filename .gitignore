@@ -1,8 +1,8 @@
 # Cargo build
-/target/
+target/
+**/target/
 
-# Cargo lock (если это не библиотека)
-Cargo.lock
+# Keep Cargo.lock for this workspace
 
 # MacOS
 .DS_Store
