@@ -25,13 +25,22 @@ struct CrawlCommand {
     extract_links: bool,
 }
 
+#[derive(Debug, Default)]
+struct CrawlStats {
+    processed_pages: usize,
+    successful_pages: usize,
+    failed_pages: usize,
+    total_found_links: usize,
+    queued_urls: usize,
+}
+
 #[derive(Debug)]
 struct SharedState {
     queue: VecDeque<CrawlCommand>,
     visited: HashSet<String>,
-    processed: usize,
     active_workers: usize,
     finished: bool,
+    stats: CrawlStats,
 }
 
 impl SharedState {
@@ -39,9 +48,9 @@ impl SharedState {
         Self {
             queue: VecDeque::new(),
             visited: HashSet::new(),
-            processed: 0,
             active_workers: 0,
             finished: false,
+            stats: CrawlStats::default(),
         }
     }
 }
@@ -135,9 +144,12 @@ fn worker(
         let (lock, cvar) = &*shared;
         let mut state = lock.lock().unwrap();
 
+        state.stats.processed_pages += 1;
+
         match result {
             Ok(links) => {
-                state.processed += 1;
+                state.stats.successful_pages += 1;
+                state.stats.total_found_links += links.len();
 
                 for link in links {
                     if state.visited.len() >= MAX_URLS {
@@ -154,11 +166,12 @@ fn worker(
                             url: link,
                             extract_links: true,
                         });
+                        state.stats.queued_urls += 1;
                     }
                 }
             }
             Err(err) => {
-                state.processed += 1;
+                state.stats.failed_pages += 1;
                 println!("Поток {id}: ошибка при обработке {}: {}", command.url, err);
             }
         }
@@ -167,6 +180,7 @@ fn worker(
         cvar.notify_all();
     }
 }
+
 fn main() {
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -189,6 +203,7 @@ fn main() {
             url: start_url,
             extract_links: true,
         });
+        state.stats.queued_urls = 1;
     }
 
     let mut handles = Vec::new();
@@ -211,13 +226,17 @@ fn main() {
     let state = lock.lock().unwrap();
 
     println!();
-    println!("Обход завершён.");
-    println!("Обработано страниц: {}", state.processed);
-    println!("Уникальных ссылок найдено: {}", state.visited.len());
-    println!();
-    println!("Список ссылок:");
-
+    println!("=== Список ссылок ===");
     for url in &state.visited {
         println!("{url}");
     }
+
+    println!();
+    println!("=== Статистика lab22 ===");
+    println!("Обработано страниц: {}", state.stats.processed_pages);
+    println!("Успешно открыто страниц: {}", state.stats.successful_pages);
+    println!("Ошибок при обработке: {}", state.stats.failed_pages);
+    println!("Всего найдено ссылок на страницах: {}", state.stats.total_found_links);
+    println!("Уникальных ссылок сохранено: {}", state.visited.len());
+    println!("Всего URL поставлено в очередь: {}", state.stats.queued_urls);
 }
