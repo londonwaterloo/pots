@@ -13,3 +13,6 @@ target/
 
 # Logs
 *.log
+
+*.dmg
+lab20/src/Yandex.dmg
