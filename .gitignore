@@ -1,7 +1,7 @@
 # Cargo build
 target/
 **/target/
-
+*.dmg
 # Keep Cargo.lock for this workspace
 
 # MacOS
